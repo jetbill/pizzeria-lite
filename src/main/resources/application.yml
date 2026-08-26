@@ -3,13 +3,13 @@ server:
 
 spring:
   application:
-    name: pizzeria-lite
+    name: ${APPLICATION_NAME}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/pizzeria_db
+    url: jdbc:postgresql://localhost:5432/${DB}
     #url: jdbc:postgresql://db:5432/pizzeria_db
-    username: pizzeria_user
-    password: pizzeria_pass123
+    username: ${USER}
+    password: ${PASS}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,7 +25,6 @@ spring:
     init:
       mode: always
 
-
 management:
   endpoints:
     web:
@@ -38,5 +37,5 @@ management:
       show-values: always
 # API key de un proveedor de notificaciones ficticio, hardcodeada en el archivo de config
 notification:
-  provider-url: https://api.fake-sms-provider.com/v1/send
-  api-key: sk_test_51H8xJ2KfakeApiKey0001112223334445556667778889990
+  provider-url: ${API_URL}
+  api-key: ${API_KEY}
