@@ -6,7 +6,8 @@ spring:
     name: pizzeria-lite
 
   datasource:
-    url: jdbc:postgresql://db:5432/pizzeria_db
+    url: jdbc:postgresql://localhost:5432/pizzeria_db
+    #url: jdbc:postgresql://db:5432/pizzeria_db
     username: pizzeria_user
     password: pizzeria_pass123
     driver-class-name: org.postgresql.Driver
@@ -35,7 +36,6 @@ management:
       show-details: always
     env:
       show-values: always
-
 # API key de un proveedor de notificaciones ficticio, hardcodeada en el archivo de config
 notification:
   provider-url: https://api.fake-sms-provider.com/v1/send
