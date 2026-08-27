@@ -27,3 +27,9 @@ jobs:
 
       - name: Run unit tests
         run: ./gradlew test --no-daemon
+
+      - name: Upload JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html
