@@ -20,9 +20,7 @@ public class OrderItem {
     @JsonIgnore
     private Order order;
 
-    // Se guarda solo el id del producto (no una relacion JPA hacia la entidad
-    // Product) junto con una "foto" de nombre y precio en el momento de la
-    // compra, para mantener los dominios Producto y Pedido desacoplados.
+
     @Column(name = "product_id", nullable = false)
     private Long productId;
 

@@ -7,6 +7,14 @@ plugins {
 group = 'com.pizzeria'
 version = '0.0.1'
 
+// Spring Boot 3.2.5 fija Mockito 5.7.0 y, por separado, Byte Buddy 1.14.13:
+// ninguna de las dos genera bytecode compatible con JDK 23 ("Mockito cannot
+// mock this class"). El BOM gestiona ambas versiones de forma independiente,
+// asi que hay que sobrescribir las dos (1.17.5 es la version de byte-buddy
+// que declara mockito-core 5.18.0 como dependencia).
+ext['mockito.version'] = '5.18.0'
+ext['byte-buddy.version'] = '1.17.5'
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
@@ -24,6 +32,8 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {

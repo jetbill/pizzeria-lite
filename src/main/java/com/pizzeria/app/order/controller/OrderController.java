@@ -20,11 +20,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 
-// Controlador "todopoderoso" del modulo de Pedidos: gestiona el CRUD de
-// pedidos, calcula precios/descuentos, valida transiciones de estado y
-// dispara notificaciones al cliente, todo en la misma clase. Ademas habla
-// directamente con los repositorios (propios y del modulo de Producto),
-// sin pasar por ninguna capa de servicio.
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -68,9 +64,7 @@ public class OrderController {
         }
     }
 
-    // Busqueda por nombre de cliente construida por concatenacion de strings
-    // usando el EntityManager directamente en el controlador: vulnerable a
-    // inyeccion SQL y sin pasar por ninguna capa de repositorio/servicio.
+
     @GetMapping("/search")
     @SuppressWarnings("unchecked")
     public ResponseEntity<?> searchOrdersByCustomer(@RequestParam String customerName) {
@@ -119,8 +113,7 @@ public class OrderController {
                 totalQuantity = totalQuantity + item.getQuantity();
             }
 
-            // Calculo de descuentos con condicionales anidados directamente en
-            // el controlador, en vez de delegarse a un servicio de precios.
+
             BigDecimal discount = BigDecimal.ZERO;
 
             if (orderRequest.getCouponCode() != null && orderRequest.getCouponCode().equalsIgnoreCase("PIZZA10")) {
@@ -179,8 +172,7 @@ public class OrderController {
 
             OrderStatus currentStatus = order.getStatus();
 
-            // Validacion de la maquina de estados con condicionales anidados,
-            // en vez de delegarse a una clase dedicada.
+
             boolean allowed = false;
             if (currentStatus == OrderStatus.CREATED) {
                 if (newStatus == OrderStatus.IN_PREPARATION || newStatus == OrderStatus.CANCELLED) {
@@ -197,7 +189,7 @@ public class OrderController {
                             allowed = true;
                         }
                     } else {
-                        // DELIVERED y CANCELLED son estados finales: no se permite ninguna transicion.
+
                         allowed = false;
                     }
                 }
@@ -227,8 +219,7 @@ public class OrderController {
             if (order == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
             }
-            // El controlador orquesta manualmente ambos repositorios en vez de
-            // delegar esto a un servicio de pedidos.
+
             orderItemRepository.deleteAll(order.getItems());
             orderRepository.deleteById(id);
             return ResponseEntity.noContent().build();
@@ -237,9 +228,7 @@ public class OrderController {
         }
     }
 
-    // Responsabilidad extra que no le corresponde a este controlador: el
-    // "envio" de notificaciones al cliente. Deberia vivir en un servicio de
-    // notificaciones separado (y en el futuro, en su propio microservicio).
+
     private void sendOrderConfirmationNotification(Order order) {
         System.out.println("Sending notification to " + order.getCustomerPhone()
                 + " via " + notificationProviderUrl
