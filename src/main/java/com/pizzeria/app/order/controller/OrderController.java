@@ -64,6 +64,11 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/saludar")
+    public String saludo(){
+        return "Esto es un saludo";
+    }
+
 
     @GetMapping("/search")
     @SuppressWarnings("unchecked")
