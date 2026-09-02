@@ -33,3 +33,8 @@ jobs:
         with:
           name: jacoco-report
           path: build/reports/jacoco/test/html
+
+      - name: Check enviroment variable
+        env:
+          APP_ENV: ${{secrets.APP_ENV_DEMO}}
+        run: echo "Ejecutando en el ambiente configurado"
