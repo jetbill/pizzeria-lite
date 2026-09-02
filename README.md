@@ -248,7 +248,7 @@ autenticacion HTTP Basic con `ACTUATOR_USER` / `ACTUATOR_PASSWORD`
 > Para una guia mas detallada de pruebas manuales (incluyendo ejemplos de
 > calculo de descuentos, la maquina de estados del pedido y como probar
 > Actuator con autenticacion), ver
-> [`POSTMAN_GUIDE.md`](POSTMAN_GUIDE.md).
+> [`docs/POSTMAN_GUIDE.md`](docs/POSTMAN_GUIDE.md).
 
 ## Estructura del proyecto
 
