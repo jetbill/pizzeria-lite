@@ -37,4 +37,4 @@ jobs:
       - name: Check enviroment variable
         env:
           APP_ENV: ${{secrets.APP_ENV_DEMO}}
-        run: echo "Ejecutando en el ambiente configurado"
+        run: echo "APP_ENV=$APP_ENV"
