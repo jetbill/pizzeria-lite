@@ -6,4 +6,4 @@ build/
 out/
 .env
 docker-compose.yml
-FACILITATOR_NOTES.md
+
