@@ -16,14 +16,14 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
-    build: .
-    container_name: pizzeria-app
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
+#  app:
+#    build: .
+#    container_name: pizzeria-app
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#    ports:
+#      - "8080:8080"
 
 volumes:
   pizzeria_pgdata:

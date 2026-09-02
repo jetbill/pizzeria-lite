@@ -4,3 +4,6 @@ build/
 .idea/
 *.iml
 out/
+.env
+docker-compose.yml
+

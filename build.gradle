@@ -2,10 +2,15 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.2.5'
     id 'io.spring.dependency-management' version '1.1.4'
+    id 'jacoco'
 }
 
 group = 'com.pizzeria'
 version = '0.0.1'
+
+
+ext['mockito.version'] = '5.18.0'
+ext['byte-buddy.version'] = '1.17.5'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -19,13 +24,69 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     runtimeOnly 'org.postgresql:postgresql'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+jacoco {
+    // Version reciente para evitar el mismo problema de compatibilidad con
+    // JDK 23 que tuvimos con Mockito/Byte Buddy.
+    toolVersion = '0.8.15'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.jacocoTestReport
+}
+
+// DTOs, entidades, excepciones y clases de config son en su mayoria codigo
+// generado/boilerplate (records, getters/setters, wiring): se excluyen del
+// calculo de cobertura para que el numero refleje la logica de negocio real.
+def jacocoCoverageExclusions = [
+        '**/PizzeriaApplication.class',
+        '**/dto/**',
+        '**/entity/**',
+        '**/exception/**',
+        '**/config/**'
+]
+
+tasks.jacocoTestReport {
+    dependsOn tasks.test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoCoverageExclusions)
+        }))
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn tasks.test
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoCoverageExclusions)
+        }))
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.25
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.jacocoTestCoverageVerification
 }
