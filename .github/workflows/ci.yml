@@ -28,8 +28,17 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test --no-daemon
 
+      - name: Verify test coverage (JaCoCo gate)
+        run: ./gradlew jacocoTestCoverageVerification --no-daemon
+
       - name: Upload JaCoCo coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: build/reports/jacoco/test/html
+
+      - name: Check enviroment variable
+        env:
+          APP_ENV: ${{secrets.APP_ENV_DEMO}}
+        run: echo "APP_ENV=$APP_ENV"

@@ -1,7 +1,10 @@
 package com.pizzeria.app.product.service;
 
+import com.pizzeria.app.common.exception.BusinessValidationException;
+import com.pizzeria.app.product.dto.ProductRequest;
 import com.pizzeria.app.product.entity.Product;
 import com.pizzeria.app.product.entity.ProductCategory;
+import com.pizzeria.app.product.exception.ProductNotFoundException;
 import com.pizzeria.app.product.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +16,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -28,7 +32,7 @@ class ProductServiceTest {
 
     @BeforeEach
     void setUp() {
-        productService = new ProductService(productRepository);
+        productService = new ProductService(productRepository, new BigDecimal("500"));
 
         margherita = new Product();
         margherita.setId(1L);
@@ -44,9 +48,15 @@ class ProductServiceTest {
 
         Product result = productService.findById(1L);
 
-        assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Margherita Pizza");
-        verify(productRepository).findById(1L);
+    }
+
+    @Test
+    void findById_lanzaExcepcionCuandoNoExiste() {
+        when(productRepository.findById(99L)).thenReturn(null);
+
+        assertThatThrownBy(() -> productService.findById(99L))
+                .isInstanceOf(ProductNotFoundException.class);
     }
 
     @Test
@@ -67,28 +77,43 @@ class ProductServiceTest {
     }
 
     @Test
-    void save_delegaElGuardadoAlRepositorio() {
-        when(productRepository.save(margherita)).thenReturn(margherita);
+    void create_guardaElProductoCuandoElPrecioEsValido() {
+        ProductRequest request = new ProductRequest("Hawaiana", "Piña y jamón", ProductCategory.PIZZA,
+                new BigDecimal("11.50"), true);
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Product result = productService.save(margherita);
+        Product result = productService.create(request);
 
-        assertThat(result).isEqualTo(margherita);
-        verify(productRepository).save(margherita);
+        assertThat(result.getName()).isEqualTo("Hawaiana");
+        assertThat(result.getPrice()).isEqualByComparingTo("11.50");
+        verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
+    void create_rechazaUnPrecioPorEncimaDelMaximoConfigurado() {
+        ProductRequest request = new ProductRequest("Pizza de oro", null, ProductCategory.PIZZA,
+                new BigDecimal("501"), true);
+
+        assertThatThrownBy(() -> productService.create(request))
+                .isInstanceOf(BusinessValidationException.class);
+        verify(productRepository, never()).save(any());
     }
 
     @Test
     void delete_delegaLaEliminacionAlRepositorioPorId() {
+        when(productRepository.findById(1L)).thenReturn(margherita);
+
         productService.delete(1L);
 
         verify(productRepository).deleteById(1L);
     }
 
     @Test
-    void exists_devuelveFalseCuandoElProductoNoExiste() {
-        when(productRepository.existsById(99L)).thenReturn(false);
+    void delete_lanzaExcepcionCuandoElProductoNoExiste() {
+        when(productRepository.findById(99L)).thenReturn(null);
 
-        boolean result = productService.exists(99L);
-
-        assertThat(result).isFalse();
+        assertThatThrownBy(() -> productService.delete(99L))
+                .isInstanceOf(ProductNotFoundException.class);
+        verify(productRepository, never()).deleteById(any());
     }
 }

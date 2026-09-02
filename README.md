@@ -14,6 +14,37 @@ La aplicacion tiene dos modulos funcionales:
 - Gradle 8
 - PostgreSQL 14
 - Docker / Docker Compose
+- Spring Security (Basic Auth para Actuator)
+- Jakarta Bean Validation
+- JaCoCo (cobertura de pruebas)
+
+## Arquitectura
+
+Cada modulo sigue una arquitectura en capas: el controlador solo recibe/
+devuelve DTOs y delega toda la logica de negocio al servicio; el servicio es
+el unico que conoce las entidades JPA y los repositorios.
+
+```
+Controller (valida la forma del request con @Valid)
+   -> Service (reglas de negocio, entidades, excepciones de dominio)
+      -> Repository (acceso a datos)
+```
+
+Las excepciones de negocio (producto/pedido no encontrado, regla de negocio
+incumplida, transicion de estado invalida) se resuelven en un
+`GlobalExceptionHandler` central, que responde siempre con el mismo formato
+de error:
+
+```json
+{
+  "timestamp": "2026-08-27T10:15:30",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Product not found: 999",
+  "path": "/api/products/999",
+  "details": []
+}
+```
 
 ## Como levantar el entorno
 
@@ -45,8 +76,35 @@ docker compose down -v
 ```
 
 > Alternativa sin Docker: si tenes Gradle 8 y un PostgreSQL 14 corriendo
-> localmente, podes ajustar `src/main/resources/application.yml` con tu propia
-> conexion y ejecutar `gradle bootRun`.
+> localmente, podes ajustar las variables del `.env` con tu propia conexion y
+> ejecutar `./gradlew bootRun`.
+
+### Variables de entorno (`.env`)
+
+La configuracion (credenciales de base de datos, API key del proveedor de
+notificaciones, perfil activo y usuario de Actuator) se resuelve via
+variables de entorno, nunca hardcodeada en `application.yml`:
+
+```
+APPLICATION_NAME=pizzeria-lite
+DB=pizzeria_db
+USER=pizzeria_user
+PASS=pizzeria_pass123
+API_URL=https://api.fake-sms-provider.com/v1/send
+API_KEY=sk_test_...
+SPRING_PROFILES_ACTIVE=dev
+ACTUATOR_USER=admin
+ACTUATOR_PASSWORD=changeme
+```
+
+### Perfiles
+
+- **`dev`** (`application-dev.yml`, perfil por defecto): `ddl-auto: update` y
+  carga `data.sql` en cada arranque — pensado para desarrollo local.
+- **`prod`** (`application-prod.yml`): `ddl-auto: validate` y no reinicializa
+  datos — pensado para un entorno donde el esquema ya existe.
+
+Se activa con la variable `SPRING_PROFILES_ACTIVE`.
 
 ## Proceso y logica de negocio
 
@@ -73,7 +131,7 @@ producto por id (`404` si no existe) y se aplican los cambios recibidos.
 2. Se valida que `customerName` no este vacio y que `items` tenga al menos un elemento.
 3. Por cada item del pedido:
    - Se valida que tenga un `productId` y una `quantity` mayor a cero.
-   - Se busca el producto correspondiente; si no existe, se responde `400`.
+   - Se busca el producto correspondiente; si no existe, se responde `404`.
    - Si el producto existe pero no esta disponible (`available: false`), se responde `400`.
    - Se "congela" en el item el nombre y el precio del producto en ese momento
      (`productName`, `unitPrice`) y se calcula su `lineTotal` (`unitPrice * quantity`).
@@ -181,22 +239,51 @@ consultarse desde el arranque.
 
 ### Actuator
 
-La aplicacion expone endpoints de Spring Boot Actuator en `/actuator/**`
-(por ejemplo `/actuator/health`, `/actuator/env`).
+Solo estan expuestos `/actuator/health`, `/actuator/info` y
+`/actuator/metrics`. `health` e `info` son publicos; `metrics` requiere
+autenticacion HTTP Basic con `ACTUATOR_USER` / `ACTUATOR_PASSWORD`
+(`admin` / `changeme` por defecto). Cualquier otro endpoint de Actuator
+(`env`, `beans`, etc.) no esta expuesto y responde `404`.
+
+> Para una guia mas detallada de pruebas manuales (incluyendo ejemplos de
+> calculo de descuentos, la maquina de estados del pedido y como probar
+> Actuator con autenticacion), ver
+> [`docs/POSTMAN_GUIDE.md`](docs/POSTMAN_GUIDE.md).
 
 ## Estructura del proyecto
 
 ```
 src/main/java/com/pizzeria/app/
 ├── PizzeriaApplication.java
+├── common/
+│   └── exception/       # excepciones base y GlobalExceptionHandler
+├── config/
+│   └── SecurityConfig.java
 ├── product/
 │   ├── entity/
 │   ├── repository/
 │   ├── service/
+│   ├── dto/
+│   ├── exception/
 │   └── controller/
 └── order/
     ├── entity/
     ├── repository/
+    ├── service/          # OrderService, PricingService, NotificationService...
+    ├── dto/
+    ├── exception/
+    ├── config/           # PricingProperties
     └── controller/
 ```
+
+## Tests y cobertura
+
+```bash
+./gradlew test
+```
+
+Corre las pruebas unitarias de ambos modulos (validaciones y reglas de
+negocio de `ProductService`, calculo de descuentos de `PricingService` y la
+maquina de estados de `OrderStatusTransitionValidator`) y genera un reporte
+de cobertura con JaCoCo en `build/reports/jacoco/test/html/index.html`.
 

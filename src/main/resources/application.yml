@@ -3,39 +3,44 @@ server:
 
 spring:
   application:
-    name: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME:pizzeria-lite}
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
     url: jdbc:postgresql://localhost:5432/${DB}
-    #url: jdbc:postgresql://db:5432/pizzeria_db
     username: ${USER}
     password: ${PASS}
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-    defer-datasource-initialization: true
-
-  sql:
-    init:
-      mode: always
+  security:
+    user:
+      name: ${ACTUATOR_USER:admin}
+      password: ${ACTUATOR_PASSWORD:changeme}
 
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info,metrics
   endpoint:
     health:
-      show-details: always
-    env:
-      show-values: always
-# API key de un proveedor de notificaciones ficticio, hardcodeada en el archivo de config
+      show-details: when-authorized
+
 notification:
   provider-url: ${API_URL}
   api-key: ${API_KEY}
+
+pricing:
+  coupon-code: PIZZA10
+  coupon-discount: 0.10
+  high-subtotal-threshold: 100
+  high-subtotal-discount: 0.10
+  mid-subtotal-threshold: 50
+  mid-subtotal-discount: 0.05
+  bulk-quantity-threshold: 5
+  bulk-quantity-discount: 0.05
+
+product:
+  max-price: 500
